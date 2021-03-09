@@ -265,7 +265,7 @@ def train_model(net, optimizer, scheduler, num_epochs):
 
     train_losses, train_accuracies = [], []
     val_losses, val_accuracies = [], []
-    val_T_losses, val_T_accuracies = [], []
+    val_losses_T, val_accuracies_T = [], []
     save_norms = []
     shape_params = []
 
@@ -329,11 +329,6 @@ def train_model(net, optimizer, scheduler, num_epochs):
         # Validation on transformed set
         trans2 = SinTransform(freq=np.random.uniform(0,2), phase=0, amplitude=0.5)
         val_loss_T, val_acc_T = test_model(net, valloader, transform=trans2)
-
-        # defined val_accuracies_T et val_losses_T as empty lists (weren't found before)
-        val_accuracies_T = []
-        val_losses_T = []
-
         val_accuracies_T.append(val_acc_T)
         val_losses_T.append(val_loss_T)
 
