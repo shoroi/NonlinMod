@@ -20,37 +20,37 @@ from torch.utils.data import Subset
 parser = argparse.ArgumentParser(description='(p)sMNIST task')
 parser.add_argument('-g', '--cuda', action='store_true', default=False,
                     help='Use CUDA')
-parser.add_argument('-p', '--permute', action='store_true', default=False, 
+parser.add_argument('-p', '--permute', action='store_true', default=False,
                     help='permute the order of sMNIST')
 parser.add_argument('-v', '--verbose', action='store_true', default=False,
                     help='Print details')
 
-parser.add_argument('--gain', type=float, default=1.0, 
+parser.add_argument('--gain', type=float, default=1.0,
                     help='degree of nonlinearity at initialization')
-parser.add_argument('--saturation', type=float, default=1.0, 
+parser.add_argument('--saturation', type=float, default=1.0,
                     help='degree of saturation  at initialization')
-parser.add_argument('--random', action='store_true', default=True, 
+parser.add_argument('--random', action='store_true', default=True,
                     help='random shape parameters initialization')
 parser.add_argument('--learn_params', action='store_true', default=True,
                     help='learn the shape parameters')
-parser.add_argument('--nonlin', type=str, default='gamma2', 
+parser.add_argument('--nonlin', type=str, default='gamma2',
                     choices=['gamma','gamma2','ReLU'],
                     help='Nonlinearity for RNN.')
 parser.add_argument('--net-type', type=str, default='RNN',
                     choices=['ANRU', 'RNN', 'LSTM', 'GRU'],
                     help='Type of recurrent neural net.')
-parser.add_argument('--nhid', type=int, default=400, 
+parser.add_argument('--nhid', type=int, default=400,
                     help='hidden size of recurrent net')
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='initial learning rate')
 
-parser.add_argument('--save-freq', type=int, default=25, 
+parser.add_argument('--save-freq', type=int, default=25,
                     help='frequency (in epochs) to save data')
-parser.add_argument('--seed', type=int, default=400, 
+parser.add_argument('--seed', type=int, default=400,
                     help='random seed for reproducibility')
-parser.add_argument('--rinit', type=str, default="henaff", 
+parser.add_argument('--rinit', type=str, default="henaff",
                     help='recurrent weight matrix initialization')
-parser.add_argument('--iinit', type=str, default="kaiming", 
+parser.add_argument('--iinit', type=str, default="kaiming",
                     help='input weight matrix initialization')
 parser.add_argument('--batch', type=int, default=100,
                     help='batch size')
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 ###############################################################################
 
 if __name__ == "__main__":
-    if args.nonlin is not ('gamma' or 'gamma2'): 
+    if args.nonlin is not ('gamma' or 'gamma2'):
         args.learn_params = False
 
     if args.net_type=='RNN':
@@ -129,7 +129,7 @@ if __name__ == "__main__":
             # Savedir is of type: ./Training/SavedModels/psMNIST/400/ANRU_lr0.0001_p0.0_hs400/2020-01-02/
 
     if not args.test:
-        # Considering args.verbose runs as just debugging, so allowing overwritting. 
+        # Considering args.verbose runs as just debugging, so allowing overwritting.
         if args.verbose: SAVEDIR+='--X'
         # Else
         if not os.path.exists(SAVEDIR):
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             fp.write(f'\nSaving to: {SAVEDIR}')
             if args.note!='':
                 fp.write(f'\nNote     : {args.note}')
-        
+
             fp.write('\n\nHyperparameters: ')
             for key, val in args.__dict__.items():
                 fp.write(('{}: {}, '.format(key, val)))
@@ -177,7 +177,7 @@ class Model(nn.Module):
 
         self.loss_func = nn.CrossEntropyLoss()
 
-    def forward(self, inputs, y, order, 
+    def forward(self, inputs, y, order,
                 transform=None, return_ns=False, external_drive=None):
         h_net0, h_net1, a = None, None, None
         hiddens, shape_signals, pre_activations = [], [], []
@@ -193,15 +193,15 @@ class Model(nn.Module):
                 shift = 0.0
             else:
                 shift = external_drive.get_factor(i)-1
-            
+
             h_net0 = self.rnn(x, h_net0, external_drive=shift)
 
             for temp in [h_net0, h_net1]:
-                if temp is not None and temp.requires_grad: 
+                if temp is not None and temp.requires_grad:
                     temp.retain_grad()
 
             # if return_ns:
-            #     if args.net_type=='ANRU': 
+            #     if args.net_type=='ANRU':
             #         shape_signals.append(shape_parameters)
             #         pre_activations.append(pre_activs.cpu().detach().numpy())
             #     hiddens.append(h_net0.cpu().detach().numpy())
@@ -215,13 +215,13 @@ class Model(nn.Module):
         # if transform is not None: suffix = '_T'
         # elif external_drive is not None: suffix='_D'
         # else: suffix+''
-            
+
         # shape_signals_label = 'shapesignals'+suffix+'.npy'
         # hiddens_label = 'net0_hiddenstates'+suffix+'.npy'
         # preactivs_label = 'net0_preactivations'+suffix+'.npy'
 
-        # if return_ns: 
-        #     if args.net_type=='ANRU': 
+        # if return_ns:
+        #     if args.net_type=='ANRU':
         #         np.save(os.path.join(MODELDIR, shape_signals_label), shape_signals)
         #         np.save(os.path.join(MODELDIR, preactivs_label), pre_activations)
         #     np.save(os.path.join(MODELDIR, hiddens_label), hiddens)
@@ -323,18 +323,23 @@ def train_model(net, optimizer, scheduler, num_epochs):
         val_loss, val_acc = test_model(net, valloader, transform=None)
         val_accuracies.append(val_acc)
         val_losses.append(val_loss)
-        
+
         scheduler.step(val_loss) # lr scheduler based on validation loss
 
         # Validation on transformed set
         trans2 = SinTransform(freq=np.random.uniform(0,2), phase=0, amplitude=0.5)
         val_loss_T, val_acc_T = test_model(net, valloader, transform=trans2)
+
+        # defined val_accuracies_T et val_losses_T as empty lists (weren't found before)
+        val_accuracies_T = []
+        val_losses_T = []
+
         val_accuracies_T.append(val_acc_T)
         val_losses_T.append(val_loss_T)
 
         with open(LOGFILE, 'a') as fp:
             fp.write('\n  {:3.0f}    {}  {:2.5f}  {:2.5f}  {:2.5f}'.
-                format(epoch + 1, str(datetime.timedelta(seconds=int(time.time() - s_t))), 
+                format(epoch + 1, str(datetime.timedelta(seconds=int(time.time() - s_t))),
                 np.mean(accs), val_acc, val_acc_T))
 
         train_losses.append(np.mean(losses))
@@ -370,7 +375,7 @@ def train_model(net, optimizer, scheduler, num_epochs):
             },
                 'e_{}.pth.tar'.format(epoch)
             )
-    
+
             _, test_acc = test_model(net, testloader, transform=None)
             _, test_T_acc = test_model(net, testloader, transform=SinTransform(freq=1, phase=0, amplitude=0.5))
             with open(LOGTEST, 'a') as fp:
@@ -402,11 +407,11 @@ if __name__ == "__main__":
         rnn = GRU(inp_size, args.nhid, cuda=CUDA)
     else:
         print('Net-type unrecognised. Using default: RNN')
-    
+
     # set training modules
     net = Model(args.nhid, rnn)
     optimizer = optim.Adam(net.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min') 
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
 
     if args.verbose:
         print('\nNumber of trainable parameters:')
@@ -425,9 +430,9 @@ if __name__ == "__main__":
     recover = 0
     #recover_date = '2021-02-12'
     epoch = recover
-    num_epochs = 100 - recover 
+    num_epochs = 100 - recover
 
-    if recover > 0: 
+    if recover > 0:
         # Recover a pretrained model + continue training
         MODELDIR = os.path.join('./Training/SavedModels', task, str(args.seed), udir, recover_date)
         last_model = torch.load(os.path.join(MODELDIR, f'e_{recover}.pth.tar'))
@@ -448,7 +453,7 @@ if __name__ == "__main__":
         Equivalent to: if args.test. Recover a pre-trained model.
         '''
         # set the following yourself
-        recover = 50 
+        recover = 50
         recover_date = '2021-02-07--1'
 
         MODELDIR = os.path.join('./Training/SavedModels', task, str(args.seed), udir, recover_date)
@@ -465,5 +470,5 @@ if __name__ == "__main__":
         print('\nTransformed:\n\tTest loss: {}\n\tTest accuracy: {}'.format(test_T_loss, test_T_acc))
 
         test_D_loss, test_D_acc = test_model(net, testloader, external_drive=StepTransform(step_size=1.0, step_length=200, step_position=200), return_parameters=True)
-        print('\nExternal drive:\n\tTest loss: {}\n\tTest accuracy: {}'.format(test_D_loss, test_D_acc))    
+        print('\nExternal drive:\n\tTest loss: {}\n\tTest accuracy: {}'.format(test_D_loss, test_D_acc))
         print('\nTime:', time.time() - start_time)
